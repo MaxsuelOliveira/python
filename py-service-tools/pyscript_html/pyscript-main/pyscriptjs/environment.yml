@@ -1,0 +1,17 @@
+channels:
+-   defaults
+-   conda-forge
+-   microsoft
+dependencies:
+-   python=3.9
+-   pip
+-   pytest=7
+-   nodejs=16
+-   black
+-   isort
+-   codespell
+-   pre-commit
+
+-   pip:
+    -   playwright
+    -   pytest-playwright

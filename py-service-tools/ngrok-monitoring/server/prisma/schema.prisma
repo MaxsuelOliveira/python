@@ -1,0 +1,29 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Cliente {
+  id        String   @id @default(uuid())
+  nome      String
+  token     String   @unique
+  urls      UrlNgrok[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UrlNgrok {
+  id         String   @id @default(uuid())
+  clienteId  String
+  url        String
+  updatedAt  DateTime @updatedAt
+
+  cliente    Cliente  @relation(fields: [clienteId], references: [id])
+
+  @@index([clienteId])
+}

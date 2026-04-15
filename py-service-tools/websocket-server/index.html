@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cliente</title>
+</head>
+
+<body>
+
+    <div id="logs">
+
+    </div>
+
+    <button id="send" type="button">
+        chamar garçom
+    </button>
+
+    <script>
+        const socket = new WebSocket("ws://localhost:8765");
+
+        socket.onopen = function (event) {
+            let data = JSON.stringify({
+                "message": "Sucesso",
+                "type": "200",
+                "function": "connection"
+            });
+            socket.send(data);
+            inner("Enviando mensagem");
+
+            // Adiciona um event listener para enviar a mensagem quando o botão for clicado
+            document.getElementById("send").addEventListener("click", () => {
+
+                let data = JSON.stringify({
+                    "message": "Estou conectado",
+                    "type": "",
+                    "function": "send"
+                });
+
+                socket.send(data);
+
+                inner("Enviando mensagem");
+            });
+
+        };
+
+        socket.onmessage = function (event) {
+            inner("\n\n" + "Received: " + event.data);
+        };
+
+        socket.onclose = function (event) {
+            console.log("Connection closed.");
+            inner("\n\n" + "Connection closed.");
+        };
+
+        function inner(text) {
+            document.getElementById("logs").innerText = + text;
+        }
+    </script>
+
+</body>
+
+</html>

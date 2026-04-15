@@ -1,0 +1,2 @@
+Pillow
+# ffmpeg/ffprobe é necessário no sistema (não via pip)

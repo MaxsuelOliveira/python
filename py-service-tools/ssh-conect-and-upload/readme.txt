@@ -1,0 +1,1 @@
+https://www.delftstack.com/pt/howto/python/python-ssh/#:~:text=SSH%20%28significa%20Secure%20Socket%20Shell%29%20%C3%A9%20um%20protocolo,possui%20m%C3%B3dulos%20dispon%C3%ADveis%20que%20permitem%20tal%20execu%C3%A7%C3%A3o%20SSH.

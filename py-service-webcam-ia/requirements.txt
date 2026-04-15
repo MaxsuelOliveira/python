@@ -1,0 +1,4 @@
+opencv-python>=4.5.5
+numpy>=1.21
+requests>=2.25
+websockets>=10.0

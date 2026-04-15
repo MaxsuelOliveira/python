@@ -1,0 +1,2 @@
+# biblioteca padrão - sem dependências obrigatórias
+# se for implementar upload S3: boto3

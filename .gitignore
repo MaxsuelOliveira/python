@@ -1,0 +1,64 @@
+# Global Python
+**/__pycache__/
+**/*.py[cod]
+**/*.pyo
+**/*.pyd
+
+# Virtual environments
+**/.venv/
+**/venv/
+**/env/
+**/ENV/
+
+# Environment files
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.exemple
+
+# Python tooling
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.coverage
+**/htmlcov/
+**/*.egg-info/
+
+# JavaScript tooling
+**/node_modules/
+**/coverage/
+
+# Build artifacts
+**/build/
+**/dist/
+
+# OS and editor files
+**/.vscode/
+**/.idea/
+**/.DS_Store
+**/Thumbs.db
+
+# Local secrets and auth material
+**/token.json
+**/client_secret.json
+**/.ssh/
+**/.git.embedded-backup/
+**/id_rsa
+**/id_rsa.pub
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+
+# Local logs
+**/*.log
+**/*.tmp
+**/*.bak
+
+# Vendored or generated package folders
+**/.build/package/
+**/site-packages/
+**/*.dist-info/
+
+# Custom ignores for specific projects
+py-service-transcrever-audio/models/
