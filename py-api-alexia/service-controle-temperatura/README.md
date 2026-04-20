@@ -124,6 +124,13 @@ Quando a temperatura estiver acima do limite, ele executa o comando configurado 
 
 ### Rodar localmente
 
+Se voce for executar fora do AWS Lambda, use o ambiente virtual do projeto para garantir que o ASK SDK esteja disponivel:
+
+```powershell
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
 Use este comando:
 
 ```powershell
@@ -188,13 +195,13 @@ python -m venv .venv
 .venv\Scripts\Activate.ps1
 ```
 
-2. Se preferir fazer manualmente, instale as dependencias em uma pasta de empacotamento:
+1. Se preferir fazer manualmente, instale as dependencias em uma pasta de empacotamento:
 
 ```powershell
 pip install -r requirements.txt -t package
 ```
 
-3. Copie o codigo da skill e a pasta de configuracao:
+1. Copie o codigo da skill e a pasta de configuracao:
 
 ```powershell
 Copy-Item lambda_function.py package\
@@ -203,9 +210,9 @@ Copy-Item turn_on_office_ac.py package\
 Copy-Item -Recurse config package\config
 ```
 
-4. Entre na pasta `package`, compacte o conteudo em `.zip` e envie para uma funcao Lambda Python.
+1. Entre na pasta `package`, compacte o conteudo em `.zip` e envie para uma funcao Lambda Python.
 
-5. No Alexa Developer Console:
+1. No Alexa Developer Console:
    - Crie uma Custom Skill
    - Importe o modelo de interacao `interaction-models/pt-BR.json`
    - Aponte o endpoint para a funcao Lambda

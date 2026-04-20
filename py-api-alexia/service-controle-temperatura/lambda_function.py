@@ -9,15 +9,40 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import requests
-from ask_sdk_core.api_client import DefaultApiClient
-from ask_sdk_core.dispatch_components import (
-    AbstractExceptionHandler,
-    AbstractRequestHandler,
-)
-from ask_sdk_core.skill_builder import CustomSkillBuilder
-from ask_sdk_core.utils import is_intent_name, is_request_type
-from ask_sdk_model.services import ServiceException
-from ask_sdk_model.ui import AskForPermissionsConsentCard, SimpleCard
+
+try:
+    from ask_sdk_core.api_client import DefaultApiClient
+    from ask_sdk_core.dispatch_components import (
+        AbstractExceptionHandler,
+        AbstractRequestHandler,
+    )
+    from ask_sdk_core.skill_builder import CustomSkillBuilder
+    from ask_sdk_core.utils import is_intent_name, is_request_type
+    from ask_sdk_model.services import ServiceException
+    from ask_sdk_model.ui import AskForPermissionsConsentCard, SimpleCard
+
+    ASK_SDK_AVAILABLE = True
+except ModuleNotFoundError:
+    DefaultApiClient = None
+    AbstractExceptionHandler = object
+    AbstractRequestHandler = object
+    CustomSkillBuilder = None
+    ServiceException = Exception
+    AskForPermissionsConsentCard = None
+    SimpleCard = None
+    ASK_SDK_AVAILABLE = False
+
+    def is_intent_name(_intent_name):
+        def _unavailable(_handler_input):
+            return False
+
+        return _unavailable
+
+    def is_request_type(_request_type):
+        def _unavailable(_handler_input):
+            return False
+
+        return _unavailable
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
@@ -784,146 +809,154 @@ def build_weather_speech(location: Location, weather: WeatherSnapshot) -> str:
     )
 
 
-class LaunchRequestHandler(AbstractRequestHandler):
-    def can_handle(self, handler_input):
-        return is_request_type("LaunchRequest")(handler_input)
+if ASK_SDK_AVAILABLE:
+    class LaunchRequestHandler(AbstractRequestHandler):
+        def can_handle(self, handler_input):
+            return is_request_type("LaunchRequest")(handler_input)
 
-    def handle(self, handler_input):
-        speech = (
-            "Sua skill de clima esta pronta. "
-            "Eu posso consultar o tempo da cidade vinculada a esta Alexa."
-        )
-        return (
-            handler_input.response_builder
-            .speak(speech)
-            .ask(HELP_PROMPT)
-            .set_card(SimpleCard("Skill de Clima", speech))
-            .response
-        )
-
-
-class CurrentWeatherIntentHandler(AbstractRequestHandler):
-    def can_handle(self, handler_input):
-        return is_intent_name("CurrentWeatherIntent")(handler_input)
-
-    def handle(self, handler_input):
-        requested_city = get_city_slot(handler_input)
-
-        try:
-            location = resolve_location(handler_input, requested_city)
-            weather = fetch_weather(location)
-            execute_hot_temperature_command(
-                location,
-                weather,
-                trigger_source="voice",
-            )
-        except LocationPermissionRequired:
+        def handle(self, handler_input):
             speech = (
-                "Para descobrir o clima usando a localizacao da sua Alexa, "
-                "eu preciso da permissao de endereco no aplicativo Alexa."
+                "Sua skill de clima esta pronta. "
+                "Eu posso consultar o tempo da cidade vinculada a esta Alexa."
             )
             return (
                 handler_input.response_builder
                 .speak(speech)
-                .ask("Abra o app Alexa e autorize o acesso ao endereco do dispositivo.")
-                .set_card(AskForPermissionsConsentCard(permissions=[ADDRESS_PERMISSION]))
+                .ask(HELP_PROMPT)
+                .set_card(SimpleCard("Skill de Clima", speech))
                 .response
             )
-        except LocationNotConfigured as exc:
+
+
+    class CurrentWeatherIntentHandler(AbstractRequestHandler):
+        def can_handle(self, handler_input):
+            return is_intent_name("CurrentWeatherIntent")(handler_input)
+
+        def handle(self, handler_input):
+            requested_city = get_city_slot(handler_input)
+
+            try:
+                location = resolve_location(handler_input, requested_city)
+                weather = fetch_weather(location)
+                execute_hot_temperature_command(
+                    location,
+                    weather,
+                    trigger_source="voice",
+                )
+            except LocationPermissionRequired:
+                speech = (
+                    "Para descobrir o clima usando a localizacao da sua Alexa, "
+                    "eu preciso da permissao de endereco no aplicativo Alexa."
+                )
+                return (
+                    handler_input.response_builder
+                    .speak(speech)
+                    .ask("Abra o app Alexa e autorize o acesso ao endereco do dispositivo.")
+                    .set_card(AskForPermissionsConsentCard(permissions=[ADDRESS_PERMISSION]))
+                    .response
+                )
+            except LocationNotConfigured as exc:
+                return (
+                    handler_input.response_builder
+                    .speak(str(exc))
+                    .ask(HELP_PROMPT)
+                    .response
+                )
+            except WeatherLookupError as exc:
+                LOGGER.exception("Falha ao buscar o clima.")
+                return (
+                    handler_input.response_builder
+                    .speak(str(exc))
+                    .ask("Tente novamente em alguns instantes.")
+                    .response
+                )
+
+            speech = build_weather_speech(location, weather)
             return (
                 handler_input.response_builder
-                .speak(str(exc))
+                .speak(speech)
+                .ask("Se quiser, eu tambem posso consultar outra cidade.")
+                .set_card(SimpleCard(f"Clima em {location.label}", speech))
+                .response
+            )
+
+
+    class HelpIntentHandler(AbstractRequestHandler):
+        def can_handle(self, handler_input):
+            return is_intent_name("AMAZON.HelpIntent")(handler_input)
+
+        def handle(self, handler_input):
+            return (
+                handler_input.response_builder
+                .speak(HELP_PROMPT)
                 .ask(HELP_PROMPT)
                 .response
             )
-        except WeatherLookupError as exc:
-            LOGGER.exception("Falha ao buscar o clima.")
+
+
+    class CancelOrStopIntentHandler(AbstractRequestHandler):
+        def can_handle(self, handler_input):
             return (
-                handler_input.response_builder
-                .speak(str(exc))
-                .ask("Tente novamente em alguns instantes.")
-                .response
+                is_intent_name("AMAZON.CancelIntent")(handler_input)
+                or is_intent_name("AMAZON.StopIntent")(handler_input)
+                or is_intent_name("AMAZON.NavigateHomeIntent")(handler_input)
             )
 
-        speech = build_weather_speech(location, weather)
-        return (
-            handler_input.response_builder
-            .speak(speech)
-            .ask("Se quiser, eu tambem posso consultar outra cidade.")
-            .set_card(SimpleCard(f"Clima em {location.label}", speech))
-            .response
-        )
+        def handle(self, handler_input):
+            return handler_input.response_builder.speak("Tudo bem. Ate mais.").response
 
 
-class HelpIntentHandler(AbstractRequestHandler):
-    def can_handle(self, handler_input):
-        return is_intent_name("AMAZON.HelpIntent")(handler_input)
+    class FallbackIntentHandler(AbstractRequestHandler):
+        def can_handle(self, handler_input):
+            return is_intent_name("AMAZON.FallbackIntent")(handler_input)
 
-    def handle(self, handler_input):
-        return (
-            handler_input.response_builder
-            .speak(HELP_PROMPT)
-            .ask(HELP_PROMPT)
-            .response
-        )
-
-
-class CancelOrStopIntentHandler(AbstractRequestHandler):
-    def can_handle(self, handler_input):
-        return (
-            is_intent_name("AMAZON.CancelIntent")(handler_input)
-            or is_intent_name("AMAZON.StopIntent")(handler_input)
-            or is_intent_name("AMAZON.NavigateHomeIntent")(handler_input)
-        )
-
-    def handle(self, handler_input):
-        return handler_input.response_builder.speak("Tudo bem. Ate mais.").response
+        def handle(self, handler_input):
+            speech = (
+                "Eu nao entendi esse pedido. "
+                "Tente dizer: como esta o tempo na minha cidade."
+            )
+            return handler_input.response_builder.speak(speech).ask(HELP_PROMPT).response
 
 
-class FallbackIntentHandler(AbstractRequestHandler):
-    def can_handle(self, handler_input):
-        return is_intent_name("AMAZON.FallbackIntent")(handler_input)
+    class SessionEndedRequestHandler(AbstractRequestHandler):
+        def can_handle(self, handler_input):
+            return is_request_type("SessionEndedRequest")(handler_input)
 
-    def handle(self, handler_input):
-        speech = (
-            "Eu nao entendi esse pedido. "
-            "Tente dizer: como esta o tempo na minha cidade."
-        )
-        return handler_input.response_builder.speak(speech).ask(HELP_PROMPT).response
+        def handle(self, handler_input):
+            return handler_input.response_builder.response
 
 
-class SessionEndedRequestHandler(AbstractRequestHandler):
-    def can_handle(self, handler_input):
-        return is_request_type("SessionEndedRequest")(handler_input)
+    class CatchAllExceptionHandler(AbstractExceptionHandler):
+        def can_handle(self, handler_input, exception):
+            return True
 
-    def handle(self, handler_input):
-        return handler_input.response_builder.response
-
-
-class CatchAllExceptionHandler(AbstractExceptionHandler):
-    def can_handle(self, handler_input, exception):
-        return True
-
-    def handle(self, handler_input, exception):
-        LOGGER.exception("Erro nao tratado: %s", exception)
-        speech = "Ocorreu um problema ao processar sua solicitacao. Tente novamente."
-        return handler_input.response_builder.speak(speech).ask(HELP_PROMPT).response
+        def handle(self, handler_input, exception):
+            LOGGER.exception("Erro nao tratado: %s", exception)
+            speech = "Ocorreu um problema ao processar sua solicitacao. Tente novamente."
+            return handler_input.response_builder.speak(speech).ask(HELP_PROMPT).response
 
 
-skill_builder = CustomSkillBuilder(api_client=DefaultApiClient())
-skill_builder.add_request_handler(LaunchRequestHandler())
-skill_builder.add_request_handler(CurrentWeatherIntentHandler())
-skill_builder.add_request_handler(HelpIntentHandler())
-skill_builder.add_request_handler(CancelOrStopIntentHandler())
-skill_builder.add_request_handler(FallbackIntentHandler())
-skill_builder.add_request_handler(SessionEndedRequestHandler())
-skill_builder.add_exception_handler(CatchAllExceptionHandler())
+    skill_builder = CustomSkillBuilder(api_client=DefaultApiClient())
+    skill_builder.add_request_handler(LaunchRequestHandler())
+    skill_builder.add_request_handler(CurrentWeatherIntentHandler())
+    skill_builder.add_request_handler(HelpIntentHandler())
+    skill_builder.add_request_handler(CancelOrStopIntentHandler())
+    skill_builder.add_request_handler(FallbackIntentHandler())
+    skill_builder.add_request_handler(SessionEndedRequestHandler())
+    skill_builder.add_exception_handler(CatchAllExceptionHandler())
 
-ask_lambda_handler = skill_builder.lambda_handler()
+    ask_lambda_handler = skill_builder.lambda_handler()
+else:
+    ask_lambda_handler = None
 
 
 def lambda_handler(event, context):
     if is_monitor_event(event):
         return run_temperature_monitor(event)
+
+    if ask_lambda_handler is None:
+        raise RuntimeError(
+            "Dependencias da Alexa Skill nao instaladas. Instale requirements.txt para usar o handler da skill."
+        )
 
     return ask_lambda_handler(event, context)

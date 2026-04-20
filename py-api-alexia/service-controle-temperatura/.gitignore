@@ -21,3 +21,4 @@ dist/
 .idea/
 .DS_Store
 Thumbs.db
+./config/device_locations.json
