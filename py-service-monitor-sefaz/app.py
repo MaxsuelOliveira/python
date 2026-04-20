@@ -1,6 +1,6 @@
 import schedule
 import time
-from get import monitorar
+from core.get import monitorar
 
 def job():
     monitorar()
