@@ -4,8 +4,8 @@
       "id": "sofa_area",
       "name": "Sofá",
       "shape": "rect",
-      "x": 0.45,
-      "y": 0.45,
+      "x": 0.3055,
+      "y": 0.5583,
       "w": 0.45,
       "h": 0.4,
       "color": "#22c55e"
@@ -14,10 +14,10 @@
       "id": "room_area",
       "name": "Quarto / Ambiente",
       "shape": "rect",
-      "x": 0.05,
-      "y": 0.08,
-      "w": 0.9,
-      "h": 0.84,
+      "x": 0.0499,
+      "y": 0.0754,
+      "w": 0.9166,
+      "h": 0.9237,
       "color": "#3b82f6"
     }
   ],
@@ -36,12 +36,40 @@
         "for_frames": 5
       },
       "actions": [
-        { "type": "websocket" },
-        { "type": "snapshot" },
-        { "type": "webhook", "enabled": false, "url": "https://example.com/webhook" },
-        { "type": "slack", "enabled": false, "webhook_url": "https://hooks.slack.com/services/..." },
-        { "type": "telegram", "enabled": false, "bot_token": "", "chat_id": "" },
-        { "type": "email", "enabled": false, "smtp_host": "smtp.gmail.com", "smtp_port": 587, "username": "", "password": "", "from_email": "", "to": [""] }
+        {
+          "type": "websocket"
+        },
+        {
+          "type": "snapshot"
+        },
+        {
+          "type": "webhook",
+          "enabled": false,
+          "url": "https://example.com/webhook"
+        },
+        {
+          "type": "slack",
+          "enabled": false,
+          "webhook_url": "https://hooks.slack.com/services/..."
+        },
+        {
+          "type": "telegram",
+          "enabled": false,
+          "bot_token": "",
+          "chat_id": ""
+        },
+        {
+          "type": "email",
+          "enabled": false,
+          "smtp_host": "smtp.gmail.com",
+          "smtp_port": 587,
+          "username": "",
+          "password": "",
+          "from_email": "",
+          "to": [
+            ""
+          ]
+        }
       ]
     },
     {
@@ -57,8 +85,34 @@
         "for_seconds": 20
       },
       "actions": [
-        { "type": "websocket" },
-        { "type": "snapshot" }
+        {
+          "type": "websocket"
+        },
+        {
+          "type": "snapshot"
+        }
+      ]
+    },
+    {
+      "id": "rule_92qk7j",
+      "name": "Pessoa no sofá",
+      "enabled": true,
+      "cooldown_seconds": 20,
+      "condition": {
+        "type": "object_in_zone",
+        "object": "person",
+        "zone_id": "sofa_area",
+        "min_confidence": 0.45,
+        "min_overlap": 0.15,
+        "for_frames": 4
+      },
+      "actions": [
+        {
+          "type": "websocket"
+        },
+        {
+          "type": "snapshot"
+        }
       ]
     }
   ]

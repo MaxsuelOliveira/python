@@ -215,6 +215,10 @@ class RulesPayload(BaseModel):
     rules: List[Dict[str, Any]] = Field(default_factory=list)
 
 
+class ZonesPayload(BaseModel):
+    zones: List[Dict[str, Any]] = Field(default_factory=list)
+
+
 class AppState(BaseModel):
     running: bool = False
     latest_frame_ts: Optional[str] = None
@@ -785,6 +789,20 @@ def get_rules():
 def put_rules(payload: RulesPayload):
     save_json(RULES_FILE, payload.model_dump())
     return {"ok": True}
+
+
+@app.get("/api/zones")
+def get_zones():
+    data = load_json(RULES_FILE, DEFAULT_RULES)
+    return {"zones": data.get("zones", [])}
+
+
+@app.put("/api/zones")
+def put_zones(payload: ZonesPayload):
+    data = load_json(RULES_FILE, DEFAULT_RULES)
+    data["zones"] = payload.model_dump().get("zones", [])
+    save_json(RULES_FILE, data)
+    return {"ok": True, "zones": data["zones"]}
 
 
 @app.get("/api/events")

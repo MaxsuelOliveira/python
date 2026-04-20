@@ -58,3 +58,27 @@ input, select { padding: 10px 12px; border-radius: 12px; border: 1px solid var(-
   .sidebar { border-right: 0; border-bottom: 1px solid var(--border); }
   .topbar, .grid-dashboard, .two-col, .form-grid { grid-template-columns: 1fr; }
 }
+
+.compact-header { margin-top: 14px; }
+.inline-actions { display: flex; gap: 10px; }
+.left-actions { justify-content: flex-start; }
+.zones-layout { display: grid; grid-template-columns: 420px minmax(0, 1fr); gap: 18px; align-items: start; }
+.zones-stack { max-height: 260px; overflow: auto; }
+.zone-list-item { width: 100%; text-align: left; border: 1px solid var(--border); }
+.zone-list-item.active { border-color: var(--primary); }
+.zone-form { margin-top: 16px; }
+.zone-stage-shell { background: #07101f; border-radius: 20px; border: 1px solid var(--border); padding: 14px; }
+.zone-stage { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #050a14; border-radius: 16px; overflow: hidden; }
+.zone-stage-image, .zone-stage-placeholder { width: 100%; height: 100%; object-fit: cover; border-radius: 16px; }
+.zone-overlay { position: absolute; border: 2px solid var(--primary); border-radius: 14px; background: rgba(96, 165, 250, 0.08); cursor: move; user-select: none; touch-action: none; }
+.zone-overlay.selected { box-shadow: 0 0 0 2px rgba(255,255,255,0.15), inset 0 0 0 1px rgba(255,255,255,0.15); }
+.zone-overlay-label { position: absolute; top: 8px; left: 8px; color: white; font-size: 12px; font-weight: 700; padding: 6px 10px; border-radius: 999px; }
+.zone-handle { position: absolute; background: white; border-radius: 999px; box-shadow: 0 2px 12px rgba(0,0,0,.25); }
+.zone-handle-se { width: 16px; height: 16px; right: -8px; bottom: -8px; cursor: nwse-resize; }
+.zone-handle-nw { width: 14px; height: 14px; left: -7px; top: -7px; cursor: nwse-resize; }
+.zone-handle-e { width: 12px; height: 28px; right: -6px; top: calc(50% - 14px); cursor: ew-resize; }
+.zone-handle-s { width: 28px; height: 12px; left: calc(50% - 14px); bottom: -6px; cursor: ns-resize; }
+.zone-help { margin-top: 12px; }
+@media (max-width: 1100px) {
+  .zones-layout { grid-template-columns: 1fr; }
+}

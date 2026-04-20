@@ -50,6 +50,12 @@ export default function App() {
     setMessage('Regras salvas com sucesso.')
   }
 
+  async function saveZones() {
+    const response = await apiPut('/api/zones', { zones: rulesPayload.zones })
+    setRulesPayload((current) => ({ ...current, zones: response.zones || current.zones }))
+    setMessage('Zonas salvas com sucesso.')
+  }
+
   async function saveSettings() {
     await apiPut('/api/settings', settings)
     setMessage('Configurações salvas com sucesso.')
@@ -78,7 +84,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Dashboard state={state} rules={rulesPayload} events={events} />} />
         <Route path="/rules" element={<RulesPage payload={rulesPayload} onChange={setRulesPayload} onSave={saveRules} />} />
-        <Route path="/zones" element={<ZonesPage payload={rulesPayload} onChange={setRulesPayload} state={state} />} />
+        <Route path="/zones" element={<ZonesPage payload={rulesPayload} onChange={setRulesPayload} state={state} onSave={saveZones} />} />
         <Route path="/settings" element={<SettingsPage settings={settings} onChange={setSettings} onSave={saveSettings} />} />
         <Route path="/alerts" element={<AlertsPage onTestAlert={testAlert} />} />
         <Route path="/history" element={<HistoryPage events={events} />} />

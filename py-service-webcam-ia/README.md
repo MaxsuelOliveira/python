@@ -14,7 +14,7 @@ Projeto completo para monitoramento de ambiente com câmera, detecção por YOLO
 - **Frontend React + Vite** com:
   - dashboard ao vivo
   - editor de regras
-  - editor de zonas
+  - editor visual de zonas com arrastar e redimensionar
   - tela de configurações
   - tela de alertas / teste de integrações
   - histórico de eventos
@@ -311,6 +311,13 @@ GET /api/rules
 PUT /api/rules
 ```
 
+### Zonas
+
+```http
+GET /api/zones
+PUT /api/zones
+```
+
 ### Eventos
 
 ```http
@@ -348,7 +355,7 @@ Mensagens emitidas:
 2. Inicie o frontend.
 3. Abra o painel web.
 4. Ajuste `settings.json` ou use a tela de Configurações.
-5. Ajuste as coordenadas da zona do sofá na tela de Zonas.
+5. Abra a tela de Zonas, congele mentalmente o frame atual e ajuste a zona do sofá arrastando e redimensionando a área visual.
 6. Habilite a regra `dog_on_sofa`.
 7. Vá para o dashboard e verifique se a câmera está ativa.
 8. Faça um teste de alerta pela tela de Alertas.
@@ -357,7 +364,7 @@ Mensagens emitidas:
 
 ## Melhorias futuras já preparadas pela arquitetura
 
-- editor visual com arrastar/soltar zonas sobre canvas
+- importação/exportação de zonas e regras
 - autenticação
 - múltiplas câmeras
 - fila de eventos com retry robusto
