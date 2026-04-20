@@ -1,6 +1,7 @@
-backend/.venv/
+.venv/
 frontend/node_modules/
-backend/snapshots/*.jpg
-backend/data/events.db
+snapshots/*.jpg
+data/events.db
 __pycache__/
 *.pyc
+.db
