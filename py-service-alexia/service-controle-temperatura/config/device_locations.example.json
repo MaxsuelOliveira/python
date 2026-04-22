@@ -1,0 +1,12 @@
+{
+  "amzn1.ask.device.SEU_DEVICE_ID_AQUI": {
+    "city": "Salvador",
+    "country_code": "BR",
+    "label": "Salvador"
+  },
+  "amzn1.ask.device.OUTRO_DEVICE_ID": {
+    "latitude": -12.9777,
+    "longitude": -38.5016,
+    "label": "Salvador"
+  }
+}

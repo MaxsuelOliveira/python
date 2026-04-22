@@ -1,13 +1,7 @@
-import os
 import requests
+from datetime import datetime, timezone
+
 from bs4 import BeautifulSoup
-from dotenv import load_dotenv
-
-load_dotenv()
-
-URL_SEFAZ = os.getenv("URL_SEFAZ")
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 status_map = {
     "bola_verde_P": "OK",
@@ -15,23 +9,47 @@ status_map = {
     "bola_vermelha_P": "Indisponível"
 }
 
-def enviar_telegram(mensagem: str):
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+def enviar_telegram(mensagem: str, telegram_token: str, telegram_chat_id: str, timeout_seconds: int):
+    url = f"https://api.telegram.org/bot{telegram_token}/sendMessage"
     payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
+        "chat_id": telegram_chat_id,
         "text": mensagem,
         "parse_mode": "HTML"
     }
-    requests.post(url, data=payload)
+    response = requests.post(url, data=payload, timeout=timeout_seconds)
+    response.raise_for_status()
+    return response
 
-def obter_status():
+
+def montar_payload_webhook(indisponiveis, status):
+    mensagem = montar_mensagem_alerta(indisponiveis)
+    return {
+        "event": "sefaz_alert",
+        "source": "py-service-monitor-sefaz",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "summary": {
+            "message": mensagem,
+            "indisponiveis_count": len(indisponiveis),
+        },
+        "indisponiveis": indisponiveis,
+        "status": status,
+    }
+
+
+def enviar_webhook(webhook_url: str, payload: dict, timeout_seconds: int):
+    response = requests.post(webhook_url, json=payload, timeout=timeout_seconds)
+    response.raise_for_status()
+    return response
+
+def obter_status(url_sefaz: str, timeout_seconds: int):
     headers = {
         "accept-language": "pt-BR,pt;q=0.9",
-        "Referer": URL_SEFAZ,
+        "Referer": url_sefaz,
         "cookie": "AspxAutoDetectCookieSupport=1"
     }
 
-    res = requests.get(URL_SEFAZ, headers=headers)
+    res = requests.get(url_sefaz, headers=headers, timeout=timeout_seconds)
+    res.raise_for_status()
     soup = BeautifulSoup(res.text, "html.parser")
     tabela = soup.find("table", class_="tabelaListagemDados")
     if not tabela:
@@ -58,8 +76,7 @@ def obter_status():
         resultado[estado] = dict(zip(headers, valores))
     return resultado
 
-def monitorar():
-    status = obter_status()
+def construir_indisponibilidades(status):
     indisponiveis = []
 
     for estado, servicos in status.items():
@@ -67,10 +84,104 @@ def monitorar():
             if situacao == "Indisponível":
                 indisponiveis.append(f"{estado} - {servico}")
 
+    return indisponiveis
+
+def montar_mensagem_alerta(indisponiveis):
+    mensagem = "<b>🚨 SERVIÇOS INDISPONÍVEIS DETECTADOS</b>\n\n"
+    mensagem += "\n".join(f"❌ {item}" for item in indisponiveis)
+    return mensagem
+
+def monitorar(config: dict):
+    status = obter_status(config["url_sefaz"], config["request_timeout_seconds"])
+    indisponiveis = construir_indisponibilidades(status)
+
     if indisponiveis:
-        mensagem = "<b>🚨 SERVIÇOS INDISPONÍVEIS DETECTADOS</b>\n\n"
-        mensagem += "\n".join(f"❌ {item}" for item in indisponiveis)
-        enviar_telegram(mensagem)
-    else:
-        print("✔️ MONITOR SEFAZ - ONLINE.")
+        mensagem_alerta = montar_mensagem_alerta(indisponiveis)
+        payload_webhook = montar_payload_webhook(indisponiveis, status)
+        deliveries = []
+
+        if config["telegram_enabled"] and config["telegram_token"] and config["telegram_chat_id"]:
+            try:
+                response = enviar_telegram(
+                    mensagem_alerta,
+                    config["telegram_token"],
+                    config["telegram_chat_id"],
+                    config["request_timeout_seconds"],
+                )
+                deliveries.append(
+                    {
+                        "channel": "telegram",
+                        "destination": config["telegram_chat_id"],
+                        "success": True,
+                        "response_status": response.status_code,
+                        "error_message": None,
+                        "indisponiveis_count": len(indisponiveis),
+                        "payload": {
+                            "message": mensagem_alerta,
+                            "chat_id": config["telegram_chat_id"],
+                        },
+                    }
+                )
+            except Exception as exc:
+                deliveries.append(
+                    {
+                        "channel": "telegram",
+                        "destination": config["telegram_chat_id"],
+                        "success": False,
+                        "response_status": None,
+                        "error_message": str(exc),
+                        "indisponiveis_count": len(indisponiveis),
+                        "payload": {
+                            "message": mensagem_alerta,
+                            "chat_id": config["telegram_chat_id"],
+                        },
+                    }
+                )
+
+        if config.get("webhook_enabled") and config.get("webhook_url"):
+            try:
+                response = enviar_webhook(
+                    config["webhook_url"],
+                    payload_webhook,
+                    config["request_timeout_seconds"],
+                )
+                deliveries.append(
+                    {
+                        "channel": "webhook",
+                        "destination": config["webhook_url"],
+                        "success": True,
+                        "response_status": response.status_code,
+                        "error_message": None,
+                        "indisponiveis_count": len(indisponiveis),
+                        "payload": payload_webhook,
+                    }
+                )
+            except Exception as exc:
+                deliveries.append(
+                    {
+                        "channel": "webhook",
+                        "destination": config["webhook_url"],
+                        "success": False,
+                        "response_status": None,
+                        "error_message": str(exc),
+                        "indisponiveis_count": len(indisponiveis),
+                        "payload": payload_webhook,
+                    }
+                )
+
+        return {
+            "ok": True,
+            "status": status,
+            "indisponiveis": indisponiveis,
+            "message": f"{len(indisponiveis)} indisponibilidade(s) encontrada(s).",
+            "deliveries": deliveries,
+        }
+
+    return {
+        "ok": True,
+        "status": status,
+        "indisponiveis": [],
+        "message": "Monitor SEFAZ online.",
+        "deliveries": [],
+    }
 

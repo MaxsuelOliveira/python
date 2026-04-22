@@ -1,0 +1,204 @@
+:root {
+    --bg: #f7f7f5;
+    --panel: #ffffff;
+    --panel-strong: #fcfcfb;
+    --ink: #111827;
+    --muted: #6b7280;
+    --accent: #111827;
+    --line: #e7e5e4;
+    --success: #166534;
+    --warning: #92400e;
+}
+
+body {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Manrope", sans-serif;
+}
+
+.login-body {
+    display: grid;
+    place-items: center;
+}
+
+.login-shell {
+    max-width: 480px;
+}
+
+.hero-panel,
+.app-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(17, 24, 39, 0.04);
+}
+
+.hero-panel {
+    display: flex;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.75rem;
+    align-items: center;
+}
+
+.hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.hero-copy-block {
+    max-width: 640px;
+}
+
+.hero-title {
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+}
+
+.hero-copy,
+.section-kicker,
+dt,
+.mono-pill,
+.eyebrow {
+    color: var(--muted);
+}
+
+.eyebrow,
+.section-kicker,
+.mono-pill,
+dt {
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.74rem;
+}
+
+.hero-badge,
+.mono-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.55rem 0.9rem;
+    border-radius: 999px;
+    background: #eff6f0;
+    border: 1px solid #d5e9d9;
+    color: var(--success);
+    font-family: "IBM Plex Mono", monospace;
+}
+
+.hero-badge.is-paused {
+    background: #fff7ed;
+    border-color: #fed7aa;
+    color: var(--warning);
+}
+
+.section-heading {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.form-control,
+.form-check-input {
+    border-radius: 12px;
+    border-color: #d6d3d1;
+    background: var(--panel-strong);
+}
+
+.form-control:focus,
+.form-check-input:focus {
+    border-color: #9ca3af;
+    box-shadow: 0 0 0 0.2rem rgba(17, 24, 39, 0.08);
+}
+
+.panel-switch {
+    background: var(--panel-strong);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 0.85rem 1rem;
+    min-height: 100%;
+}
+
+.btn-accent {
+    background: var(--accent);
+    color: #fff;
+    border: 1px solid var(--accent);
+}
+
+.btn-accent:hover,
+.btn-accent:focus {
+    color: #fff;
+    background: #1f2937;
+    border-color: #1f2937;
+}
+
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+dt {
+    margin-bottom: 0.35rem;
+}
+
+dd {
+    margin-bottom: 0;
+    font-size: 0.98rem;
+    font-family: "IBM Plex Mono", monospace;
+    word-break: break-word;
+}
+
+.status-card {
+    overflow: hidden;
+}
+
+.history-table th {
+    font-size: 0.82rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+}
+
+.history-table td {
+    font-size: 0.92rem;
+    vertical-align: middle;
+}
+
+.app-card,
+.hero-panel,
+.alert {
+    animation: rise 0.25s ease;
+}
+
+@keyframes rise {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 991.98px) {
+    .hero-panel {
+        flex-direction: column;
+        align-items: start;
+    }
+
+    .hero-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .status-grid {
+        grid-template-columns: 1fr;
+    }
+}

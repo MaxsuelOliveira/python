@@ -1,109 +1,140 @@
-# 🛰️ Monitoramento SEFAZ - Disponibilidade de Serviços
+# Monitoramento SEFAZ - Disponibilidade de Servicos
 
-Este projeto realiza a consulta automática da tabela de disponibilidade da SEFAZ (Nota Fiscal Eletrônica) e envia alertas via Telegram caso algum serviço esteja indisponível.
+Este projeto monitora a tabela de disponibilidade da SEFAZ, persiste a configuracao em SQLite e disponibiliza um painel web simples para administracao do processo.
 
-## 🔧 Funcionalidades
+## Funcionalidades
 
-- Consulta a tabela de disponibilidade da SEFAZ (NFe).
-- Converte a tabela HTML em JSON estruturado.
-- Verifica estados com serviços indisponíveis.
-- Envia notificação automática via Telegram.
+- Consulta a tabela de disponibilidade da SEFAZ.
+- Detecta servicos indisponiveis por UF.
+- Envia alerta via Telegram quando houver indisponibilidade.
+- Envia alerta opcional via webhook HTTP quando houver indisponibilidade.
+- Persiste configuracao em SQLite.
+- Mantem historico local dos alertas enviados em SQLite.
+- Fornece frontend em HTML + Bootstrap + JavaScript puro.
+- Permite salvar configuracao, ativar ou pausar o monitor, executar uma verificacao imediata, reiniciar o processo e proteger o painel com autenticacao simples.
 
-## 📦 Requisitos
+## Requisitos
 
 - Python 3.8+
-- Conta no Telegram com bot criado via [@BotFather](https://t.me/BotFather)
-- Chat ID obtido via [@userinfobot](https://t.me/userinfobot)
+- Conta no Telegram com bot criado via @BotFather.
+- Chat ID obtido via @userinfobot.
 
-### Instale as dependências
+## Instalacao
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## 📁 Estrutura esperada
+## Variaveis iniciais de ambiente
 
-py_monitor_sefaz
-    ├── get.py
-    ├── main.py
-    ├── .env
-    ├── README.md
-    └── requirements.txt
+O arquivo .env continua opcional e agora serve apenas para popular os valores iniciais do banco no primeiro start.
 
-## 🧪 Variáveis de ambiente (.env)
-
-Crie um arquivo .env com o seguinte conteúdo:
+Exemplo:
 
 ```env
-URL_SEFAZ=https://www.nfe.fazenda.gov.br/portal/disponibilidade.aspx?versao=0.00&tipoConteudo=P2c98tUpxrI=
+URL_SEFAZ=https://www.nfe.fazenda.gov.br/portal/disponibilidade.aspx?versao=0.00&tipoConteudo=P2c98tUpxrI=&AspxAutoDetectCookieSupport=1
 TELEGRAM_TOKEN=seu_token_aqui
 TELEGRAM_CHAT_ID=seu_chat_id_aqui
+WEBHOOK_URL=https://seu-endpoint/webhook
+PANEL_USERNAME=admin
+PANEL_PASSWORD=admin123
+SECRET_KEY=troque-esta-chave
 ```
 
-## 🚀 Como executar
+Depois da primeira execucao, os valores passam a ser mantidos em config.db.
+
+As credenciais padrao sao apenas um bootstrap inicial. Antes de expor o painel fora da maquina local, troque usuario, senha e SECRET_KEY.
+
+## Execucao
 
 ```bash
-python main.py
+python app.py
 ```
 
-### Rodando como serviço / agendador
+O servidor sobe em <http://localhost:5000>.
 
-Recomenda-se executar o monitor como um serviço/scheduled job em produção. Antes de configurar, crie um arquivo `.env` local baseado em `.env.exemple` e NÃO o comite no repositório.
+## Estrutura principal
 
-Exemplo: criar `.env` localmente com os valores reais (não commitar):
-
-```bash
-cp .env.exemple .env
-# editar .env e preencher TELEGRAM_TOKEN/TELEGRAM_CHAT_ID
+```text
+py-service-monitor-sefaz
+├── app.py
+├── database.py
+├── monitor_service.py
+├── models/
+│   └── get.py
+├── static/
+│   ├── css/
+│   │   └── styles.css
+│   └── js/
+│       └── app.js
+├── templates/
+│   └── index.html
+├── config.db
+└── requirements.txt
 ```
 
-Systemd (Linux) - exemplo de unit file `/etc/systemd/system/sefaz_monitor.service`:
+## Operacao pelo painel
 
-```ini
-[Unit]
-Description=Monitor SEFAZ
-After=network.target
+No painel web voce pode:
 
-[Service]
-Type=simple
-WorkingDirectory=/caminho/para/py_monitor_sefaz
-ExecStart=/usr/bin/python3 /caminho/para/py_monitor_sefaz/main.py
-Restart=on-failure
-EnvironmentFile=/caminho/para/py_monitor_sefaz/.env
+- editar URL da SEFAZ e credenciais do Telegram;
+- configurar uma URL de webhook para receber o payload dos alertas;
+- ajustar intervalo de verificacao e timeout HTTP;
+- habilitar ou desabilitar monitor, Telegram e webhook;
+- consultar historico local dos alertas enviados;
+- alterar o usuario e a senha do painel autenticado;
+- executar uma verificacao manual imediatamente;
+- reiniciar o servidor.
 
-[Install]
-WantedBy=multi-user.target
+## Payload do webhook
+
+O endpoint esperado e um receptor HTTP que aceite POST com Content-Type application/json.
+
+O schema de referencia tambem fica disponivel autenticado em /api/webhook/schema.
+
+Quando o webhook estiver habilitado e houver indisponibilidade, o sistema envia um POST JSON com a estrutura abaixo:
+
+```json
+{
+  "event": "sefaz_alert",
+  "source": "py-service-monitor-sefaz",
+  "generated_at": "2026-04-20T20:00:00+00:00",
+  "summary": {
+    "message": "<b>🚨 SERVIÇOS INDISPONÍVEIS DETECTADOS</b>\n\n❌ UF - Servico",
+    "indisponiveis_count": 1
+  },
+  "indisponiveis": ["UF - Servico"],
+  "status": {}
+}
 ```
 
-Depois de criar a unit:
+## Autenticacao do painel
 
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now sefaz_monitor.service
-sudo journalctl -u sefaz_monitor -f
-```
+O painel agora exige login por sessao para acessar a interface e as rotas administrativas.
 
-Agendamento com cron (alternativa simples):
+Fluxo simples:
 
-```cron
-# editar crontab com: crontab -e
-# exemplo: executar a cada 5 minutos
-*/5 * * * * cd /caminho/para/py_monitor_sefaz && /usr/bin/python3 main.py >> monitor.log 2>&1
-```
+- acesse /login;
+- entre com PANEL_USERNAME e PANEL_PASSWORD;
+- depois de autenticado, altere as credenciais pelo proprio painel.
 
-Windows Task Scheduler (resumo):
+## Historico local de alertas
 
-1. Abra o Task Scheduler > Create Task
-2. Em Actions, aponte o programa para o executável Python e em Arguments coloque o caminho para `main.py`
-3. Em Triggers, defina o agendamento (ex: a cada 5 minutos usando um trigger repetido)
+Cada tentativa de envio para Telegram ou webhook e registrada na tabela alert_history do SQLite com:
 
-## 📬 Exemplo de alerta no Telegram
+- canal;
+- destino;
+- status de sucesso ou falha;
+- codigo de resposta, quando houver;
+- mensagem de erro, quando houver;
+- quantidade de indisponibilidades;
+- payload enviado;
+- data e hora do envio.
 
-🚨 SERVIÇOS INDISPONÍVEIS DETECTADOS</br>
+## Observacoes sobre o restart
 
-❌ BA - Status Serviço4 </br>
-❌ SP - Consulta Cadastro4</br>
+O botao de reinicio faz um reexec do processo Python atual. Em ambiente produtivo, o ideal continua sendo executar isso sob um supervisor de processo, como systemd, NSSM, Docker ou outro gerenciador equivalente.
 
-## 🛡️ Licença
+## Licenca
 
-Este projeto é de uso livre e educativo.
+Este projeto e de uso livre e educativo.

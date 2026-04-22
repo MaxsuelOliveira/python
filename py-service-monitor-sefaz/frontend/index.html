@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SEFAZ Control Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="{{ url_for('frontend', filename='css/styles.css') }}"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <main class="container py-4 py-lg-5">
+      <section class="hero-panel mb-4">
+        <div class="hero-copy-block">
+          <span class="eyebrow">Painel do monitor</span>
+          <h1 class="hero-title mb-2">SEFAZ Control Center</h1>
+          <p class="hero-copy mb-0">
+            Configuracao persistida, controle operacional e alertas
+            centralizados em uma interface simples.
+          </p>
+        </div>
+        <div class="hero-actions">
+          <div class="hero-badge" id="healthBadge">carregando</div>
+          <button class="btn btn-outline-dark" id="logoutBtn" type="button">
+            Sair
+          </button>
+        </div>
+      </section>
+
+      <div id="alertContainer" class="mb-4"></div>
+
+      <section class="row g-4">
+        <div class="col-12 col-xl-7">
+          <div class="card app-card h-100">
+            <div class="card-body p-4">
+              <div class="section-heading">
+                <div>
+                  <span class="section-kicker">Configuracao</span>
+                  <h2 class="h3 mb-0">Parametros persistidos</h2>
+                </div>
+                <span class="mono-pill">config.db</span>
+              </div>
+
+              <form id="configForm" class="row g-3 mt-2">
+                <div class="col-12">
+                  <label for="url_sefaz" class="form-label">URL SEFAZ</label>
+                  <input
+                    type="url"
+                    class="form-control form-control-lg"
+                    id="url_sefaz"
+                    name="url_sefaz"
+                    required
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label for="telegram_token" class="form-label"
+                    >Telegram Token</label
+                  >
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="telegram_token"
+                    name="telegram_token"
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label for="telegram_chat_id" class="form-label"
+                    >Telegram Chat ID</label
+                  >
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="telegram_chat_id"
+                    name="telegram_chat_id"
+                  />
+                </div>
+                <div class="col-12">
+                  <label for="webhook_url" class="form-label"
+                    >Webhook URL</label
+                  >
+                  <input
+                    type="url"
+                    class="form-control"
+                    id="webhook_url"
+                    name="webhook_url"
+                    placeholder="https://seu-endpoint/webhook"
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label for="check_interval_seconds" class="form-label"
+                    >Intervalo de verificacao (segundos)</label
+                  >
+                  <input
+                    type="number"
+                    min="1"
+                    class="form-control"
+                    id="check_interval_seconds"
+                    name="check_interval_seconds"
+                    required
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label for="request_timeout_seconds" class="form-label"
+                    >Timeout HTTP (segundos)</label
+                  >
+                  <input
+                    type="number"
+                    min="1"
+                    class="form-control"
+                    id="request_timeout_seconds"
+                    name="request_timeout_seconds"
+                    required
+                  />
+                </div>
+                <div class="col-md-6">
+                  <div class="form-check form-switch panel-switch">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="monitor_enabled"
+                      name="monitor_enabled"
+                    />
+                    <label class="form-check-label" for="monitor_enabled"
+                      >Monitor habilitado</label
+                    >
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-check form-switch panel-switch">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="telegram_enabled"
+                      name="telegram_enabled"
+                    />
+                    <label class="form-check-label" for="telegram_enabled"
+                      >Alertas Telegram habilitados</label
+                    >
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-check form-switch panel-switch">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="webhook_enabled"
+                      name="webhook_enabled"
+                    />
+                    <label class="form-check-label" for="webhook_enabled"
+                      >Alertas por webhook habilitados</label
+                    >
+                  </div>
+                </div>
+                <div class="col-12 d-flex flex-wrap gap-2 pt-2">
+                  <button type="submit" class="btn btn-accent btn-lg">
+                    Salvar configuracao
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-dark"
+                    id="reloadConfigBtn"
+                  >
+                    Recarregar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-xl-5">
+          <div class="card app-card mb-4 status-card">
+            <div class="card-body p-4">
+              <div class="section-heading">
+                <div>
+                  <span class="section-kicker">Runtime</span>
+                  <h2 class="h3 mb-0">Estado do processo</h2>
+                </div>
+                <span class="mono-pill" id="threadState">thread</span>
+              </div>
+              <dl class="status-grid mt-3 mb-0">
+                <div>
+                  <dt>Em execucao</dt>
+                  <dd id="runningValue">-</dd>
+                </div>
+                <div>
+                  <dt>Ultimo inicio</dt>
+                  <dd id="lastStartValue">-</dd>
+                </div>
+                <div>
+                  <dt>Ultimo fim</dt>
+                  <dd id="lastFinishValue">-</dd>
+                </div>
+                <div>
+                  <dt>Duracao</dt>
+                  <dd id="durationValue">-</dd>
+                </div>
+                <div>
+                  <dt>Ultimo erro</dt>
+                  <dd id="lastErrorValue">-</dd>
+                </div>
+                <div>
+                  <dt>Resultado</dt>
+                  <dd id="lastResultValue">-</dd>
+                </div>
+                <div>
+                  <dt>Webhook</dt>
+                  <dd id="webhookValue">-</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+
+          <div class="card app-card">
+            <div class="card-body p-4">
+              <div class="section-heading">
+                <div>
+                  <span class="section-kicker">Acoes</span>
+                  <h2 class="h3 mb-0">Controle rapido</h2>
+                </div>
+              </div>
+              <div class="d-grid gap-2 mt-3">
+                <button class="btn btn-dark btn-lg" id="runNowBtn">
+                  Executar agora
+                </button>
+                <button class="btn btn-outline-success" id="startBtn">
+                  Ativar monitor
+                </button>
+                <button class="btn btn-outline-warning" id="stopBtn">
+                  Pausar monitor
+                </button>
+                <button class="btn btn-outline-danger" id="restartBtn">
+                  Reiniciar servidor
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card app-card mt-4">
+            <div class="card-body p-4">
+              <div class="section-heading">
+                <div>
+                  <span class="section-kicker">Seguranca</span>
+                  <h2 class="h3 mb-0">Credenciais do painel</h2>
+                </div>
+                <span class="mono-pill" id="panelUsernameValue">-</span>
+              </div>
+              <form id="authForm" class="row g-3 mt-2">
+                <div class="col-12">
+                  <label for="new_username" class="form-label"
+                    >Novo usuario</label
+                  >
+                  <input
+                    class="form-control"
+                    id="new_username"
+                    name="new_username"
+                  />
+                </div>
+                <div class="col-12">
+                  <label for="current_password" class="form-label"
+                    >Senha atual</label
+                  >
+                  <input
+                    type="password"
+                    class="form-control"
+                    id="current_password"
+                    name="current_password"
+                    required
+                  />
+                </div>
+                <div class="col-12">
+                  <label for="new_password" class="form-label"
+                    >Nova senha</label
+                  >
+                  <input
+                    type="password"
+                    class="form-control"
+                    id="new_password"
+                    name="new_password"
+                    placeholder="Deixe em branco para manter a atual"
+                  />
+                </div>
+                <div class="col-12 d-grid">
+                  <button class="btn btn-outline-dark" type="submit">
+                    Atualizar credenciais
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-4">
+        <div class="card app-card">
+          <div class="card-body p-4">
+            <div class="section-heading mb-3">
+              <div>
+                <span class="section-kicker">Historico</span>
+                <h2 class="h3 mb-0">Alertas enviados</h2>
+              </div>
+              <span class="mono-pill">SQLite</span>
+            </div>
+            <div class="table-responsive">
+              <table class="table align-middle mb-0 history-table">
+                <thead>
+                  <tr>
+                    <th>Quando</th>
+                    <th>Canal</th>
+                    <th>Destino</th>
+                    <th>Status</th>
+                    <th>Itens</th>
+                    <th>Erro</th>
+                  </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                  <tr>
+                    <td colspan="6" class="text-muted">
+                      Nenhum alerta registrado.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('frontend', filename='js/app.js') }}"></script>
+  </body>
+</html>
